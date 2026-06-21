@@ -24,14 +24,8 @@ jobs:
     - name: Set up Android SDK
       uses: android-actions/setup-android@v4
 
-    - name: Set up Gradle
-      uses: gradle/actions/setup-gradle@v3
-
     - name: Build with Gradle
-      run: |
-        cd ${{ github.workspace }}
-        gradle wrapper --gradle-version 8.4
-        ./gradlew assembleDebug
+      run: ./gradlew assembleDebug
 
     - name: Upload APK to artifacts
       uses: actions/upload-artifact@v4
