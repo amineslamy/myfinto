@@ -14,6 +14,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -106,7 +107,7 @@ fun TimeTrackerApp(viewModel: TimeTrackingViewModel = viewModel()) {
                                 Text("🕒", fontSize = 20.sp, color = Color.White)
                             }
                             Text(
-                                text = "ساعت‌زن هوشمند",
+                                text = "ساعت‌زن کارکرد",
                                 fontSize = 18.sp,
                                 fontWeight = FontWeight.Black,
                                 color = Color.White
@@ -192,6 +193,16 @@ fun TimeRegistrationTab(
     currentMonthTarget: Double
 ) {
     val today = JalaliCalendarHelper.fromEpochMillis(System.currentTimeMillis())
+    
+    var editingRecord by remember { mutableStateOf<TimeRecord?>(null) }
+
+    if (editingRecord != null) {
+        EditRecordDialog(
+            record = editingRecord!!,
+            onDismiss = { editingRecord = null },
+            onSave = { updated -> viewModel.updateRecord(updated) }
+        )
+    }
     val currentMonthRecords = allRecords.filter { it.jalaliYear == today.year && it.jalaliMonth == today.month }
     val currentMillis = System.currentTimeMillis()
     val activeDurationMs = if (activeRecord?.jalaliYear == today.year && activeRecord?.jalaliMonth == today.month) {
@@ -278,7 +289,7 @@ fun TimeRegistrationTab(
                                 .padding(horizontal = 10.dp, vertical = 4.dp)
                         ) {
                             Text(
-                                text = if (isWorking) "تراز هوشمند فعال" else "متوقف",
+                                text = if (isWorking) "در حال ثبت کارکرد" else "متوقف",
                                 fontSize = 10.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = if (isWorking) Color(0xFF81C784) else Color(0xFFEF5350)
@@ -479,7 +490,7 @@ fun TimeRegistrationTab(
 
         item {
             Text(
-                text = "سوابق اخیر (۱۵ مورد آخر)",
+                text = "سوابق اخیر (۵۰ مورد آخر)",
                 fontSize = 15.sp,
                 fontWeight = FontWeight.Bold,
                 color = Color.White,
@@ -504,8 +515,12 @@ fun TimeRegistrationTab(
                 }
             }
         } else {
-            items(allRecords.take(15)) { record ->
-                RecordItem(record, onDelete = { viewModel.deleteRecord(record) })
+            items(allRecords.take(50)) { record ->
+                RecordItem(
+                    record = record,
+                    onEdit = { editingRecord = record },
+                    onDelete = { viewModel.deleteRecord(record) }
+                )
             }
         }
     }
@@ -675,7 +690,7 @@ fun ManualRecordSection(viewModel: TimeTrackingViewModel) {
 }
 
 @Composable
-fun RecordItem(record: TimeRecord, onDelete: () -> Unit) {
+fun RecordItem(record: TimeRecord, onEdit: () -> Unit, onDelete: () -> Unit) {
     val dayOfWeek = JalaliCalendarHelper.getDayOfWeekPersian(record.jalaliYear, record.jalaliMonth, record.jalaliDay)
     val startTime = SimpleDateFormat("HH:mm", Locale.US).format(Date(record.startTimeMillis))
     val endTime = if (record.endTimeMillis != null) {
@@ -727,12 +742,24 @@ fun RecordItem(record: TimeRecord, onDelete: () -> Unit) {
                     fontWeight = FontWeight.SemiBold
                 )
             }
-            IconButton(onClick = onDelete) {
-                Icon(
-                    imageVector = Icons.Default.Delete,
-                    contentDescription = "حذف سابقه",
-                    tint = MaterialTheme.colorScheme.error
-                )
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                IconButton(onClick = onEdit) {
+                    Icon(
+                        imageVector = Icons.Default.Edit,
+                        contentDescription = "ویرایش سابقه",
+                        tint = Color(0xFF00B0FF)
+                    )
+                }
+                IconButton(onClick = onDelete) {
+                    Icon(
+                        imageVector = Icons.Default.Delete,
+                        contentDescription = "حذف سابقه",
+                        tint = MaterialTheme.colorScheme.error
+                    )
+                }
             }
         }
     }
@@ -742,6 +769,18 @@ fun RecordItem(record: TimeRecord, onDelete: () -> Unit) {
 fun ReportsTab(viewModel: TimeTrackingViewModel) {
     val context = LocalContext.current
     val today = JalaliCalendarHelper.fromEpochMillis(System.currentTimeMillis())
+
+    val allRecords by viewModel.allRecords.collectAsStateWithLifecycle()
+
+    var editingRecordInReports by remember { mutableStateOf<TimeRecord?>(null) }
+
+    if (editingRecordInReports != null) {
+        EditRecordDialog(
+            record = editingRecordInReports!!,
+            onDismiss = { editingRecordInReports = null },
+            onSave = { updated -> viewModel.updateRecord(updated) }
+        )
+    }
 
     // Month Obligatory Settings State
     var targetYear by remember { mutableStateOf(today.year.toString()) }
@@ -763,6 +802,14 @@ fun ReportsTab(viewModel: TimeTrackingViewModel) {
     // Excel Export State
     var exportYear by remember { mutableStateOf(today.year.toString()) }
     var exportMonth by remember { mutableStateOf(today.month.toString()) }
+
+    // Range Records View State
+    var viewRangeSY by remember { mutableStateOf(today.year.toString()) }
+    var viewRangeSM by remember { mutableStateOf(today.month.toString()) }
+    var viewRangeSD by remember { mutableStateOf("1") }
+    var viewRangeEY by remember { mutableStateOf(today.year.toString()) }
+    var viewRangeEM by remember { mutableStateOf(today.month.toString()) }
+    var viewRangeED by remember { mutableStateOf(JalaliCalendarHelper.getDaysInMonth(today.year, today.month).toString()) }
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -1039,7 +1086,7 @@ fun ReportsTab(viewModel: TimeTrackingViewModel) {
             }
         }
 
-        // Section 3: Smart Excel/CSV Export
+        // Section 3: New Box for Displaying Records in Selected Time Range
         item {
             Card(
                 modifier = Modifier
@@ -1053,7 +1100,164 @@ fun ReportsTab(viewModel: TimeTrackingViewModel) {
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     Text(
-                        text = "خروجی هوشمند اکسل (CSV)",
+                        text = "نمایش سوابق بازه انتخابی",
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF00B0FF)
+                    )
+                    Text(
+                        text = "مشاهده و مدیریت سوابق ورود و خروج ثبت شده در بازه زمانی مشخص شده",
+                        fontSize = 12.sp,
+                        color = Color(0xFF94A3B8)
+                    )
+
+                    Text("تاریخ شروع بازه:", fontSize = 12.sp, color = Color(0xFF94A3B8))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        OutlinedTextField(
+                            value = viewRangeSY,
+                            onValueChange = { viewRangeSY = it },
+                            label = { Text("سال", color = Color(0xFF94A3B8), fontSize = 11.sp) },
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                            modifier = Modifier.weight(1f),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = Color(0xFF00B0FF),
+                                unfocusedBorderColor = Color.White.copy(alpha = 0.1f)
+                            )
+                        )
+                        OutlinedTextField(
+                            value = viewRangeSM,
+                            onValueChange = { viewRangeSM = it },
+                            label = { Text("ماه", color = Color(0xFF94A3B8), fontSize = 11.sp) },
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                            modifier = Modifier.weight(1f),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = Color(0xFF00B0FF),
+                                unfocusedBorderColor = Color.White.copy(alpha = 0.1f)
+                            )
+                        )
+                        OutlinedTextField(
+                            value = viewRangeSD,
+                            onValueChange = { viewRangeSD = it },
+                            label = { Text("روز", color = Color(0xFF94A3B8), fontSize = 11.sp) },
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                            modifier = Modifier.weight(1f),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = Color(0xFF00B0FF),
+                                unfocusedBorderColor = Color.White.copy(alpha = 0.1f)
+                            )
+                        )
+                    }
+
+                    Text("تاریخ پایان بازه:", fontSize = 12.sp, color = Color(0xFF94A3B8))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        OutlinedTextField(
+                            value = viewRangeEY,
+                            onValueChange = { viewRangeEY = it },
+                            label = { Text("سال", color = Color(0xFF94A3B8), fontSize = 11.sp) },
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                            modifier = Modifier.weight(1f),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = Color(0xFF00B0FF),
+                                unfocusedBorderColor = Color.White.copy(alpha = 0.1f)
+                            )
+                        )
+                        OutlinedTextField(
+                            value = viewRangeEM,
+                            onValueChange = { viewRangeEM = it },
+                            label = { Text("ماه", color = Color(0xFF94A3B8), fontSize = 11.sp) },
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                            modifier = Modifier.weight(1f),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = Color(0xFF00B0FF),
+                                unfocusedBorderColor = Color.White.copy(alpha = 0.1f)
+                            )
+                        )
+                        OutlinedTextField(
+                            value = viewRangeED,
+                            onValueChange = { viewRangeED = it },
+                            label = { Text("روز", color = Color(0xFF94A3B8), fontSize = 11.sp) },
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                            modifier = Modifier.weight(1f),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = Color(0xFF00B0FF),
+                                unfocusedBorderColor = Color.White.copy(alpha = 0.1f)
+                            )
+                        )
+                    }
+
+                    val vrSY = viewRangeSY.toIntOrNull() ?: today.year
+                    val vrSM = viewRangeSM.toIntOrNull() ?: today.month
+                    val vrSD = viewRangeSD.toIntOrNull() ?: 1
+
+                    val vrEY = viewRangeEY.toIntOrNull() ?: today.year
+                    val vrEM = viewRangeEM.toIntOrNull() ?: today.month
+                    val vrED = viewRangeED.toIntOrNull() ?: 30
+
+                    val startMillis = JalaliCalendarHelper.toEpochMillis(vrSY, vrSM, vrSD, 0, 0)
+                    val endMillis = JalaliCalendarHelper.toEpochMillis(vrEY, vrEM, vrED, 23, 59)
+
+                    val matchedRecords = allRecords.filter { record ->
+                        record.startTimeMillis in startMillis..endMillis
+                    }
+
+                    HorizontalDivider(
+                        color = Color.White.copy(alpha = 0.1f),
+                        modifier = Modifier.padding(vertical = 4.dp)
+                    )
+
+                    Text(
+                        text = "سوابق این بازه (${matchedRecords.size} مورد):",
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF00E5FF)
+                    )
+
+                    if (matchedRecords.isEmpty()) {
+                        Text(
+                            text = "هیچ سابقه کارکردی در این بازه زمانی ثبت نشده است.",
+                            fontSize = 12.sp,
+                            color = Color(0xFF94A3B8),
+                            modifier = Modifier.padding(vertical = 8.dp)
+                        )
+                    } else {
+                        Column(
+                            verticalArrangement = Arrangement.spacedBy(8.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            matchedRecords.forEach { record ->
+                                RecordItem(
+                                    record = record,
+                                    onEdit = { editingRecordInReports = record },
+                                    onDelete = { viewModel.deleteRecord(record) }
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Section 4: Excel/CSV Export
+        item {
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .border(BorderStroke(1.dp, Color.White.copy(alpha = 0.05f)), RoundedCornerShape(20.dp)),
+                shape = RoundedCornerShape(20.dp),
+                colors = CardDefaults.cardColors(containerColor = Color(0xFF1E1E1E))
+            ) {
+                Column(
+                    modifier = Modifier.padding(18.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Text(
+                        text = "خروجی اکسل (CSV)",
                         fontSize = 15.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color(0xFF00B0FF)
@@ -1124,4 +1328,233 @@ fun ReportsTab(viewModel: TimeTrackingViewModel) {
             }
         }
     }
+}
+
+@Composable
+fun EditRecordDialog(
+    record: TimeRecord,
+    onDismiss: () -> Unit,
+    onSave: (TimeRecord) -> Unit
+) {
+    val context = LocalContext.current
+    
+    // Deconstruct start time
+    val startCal = java.util.Calendar.getInstance()
+    startCal.timeInMillis = record.startTimeMillis
+    var startH by remember { mutableStateOf(String.format(Locale.US, "%02d", startCal.get(java.util.Calendar.HOUR_OF_DAY))) }
+    var startM by remember { mutableStateOf(String.format(Locale.US, "%02d", startCal.get(java.util.Calendar.MINUTE))) }
+
+    // Deconstruct end time
+    val hasEndTime = record.endTimeMillis != null
+    var endH by remember { 
+        mutableStateOf(
+            if (hasEndTime) {
+                val endCal = java.util.Calendar.getInstance()
+                endCal.timeInMillis = record.endTimeMillis!!
+                String.format(Locale.US, "%02d", endCal.get(java.util.Calendar.HOUR_OF_DAY))
+            } else "14"
+        )
+    }
+    var endM by remember { 
+        mutableStateOf(
+            if (hasEndTime) {
+                val endCal = java.util.Calendar.getInstance()
+                endCal.timeInMillis = record.endTimeMillis!!
+                String.format(Locale.US, "%02d", endCal.get(java.util.Calendar.MINUTE))
+            } else "00"
+        )
+    }
+
+    // Deconstruct Jalali Date
+    var year by remember { mutableStateOf(record.jalaliYear.toString()) }
+    var month by remember { mutableStateOf(record.jalaliMonth.toString()) }
+    var day by remember { mutableStateOf(record.jalaliDay.toString()) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = Color(0xFF1E1E1E),
+        title = {
+            Text(
+                text = "ویرایش سابقه کارکرد",
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color(0xFF00B0FF),
+                textAlign = TextAlign.Right,
+                modifier = Modifier.fillMaxWidth()
+            )
+        },
+        text = {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(
+                    text = "تاریخ شمسی ثبت:",
+                    fontSize = 12.sp,
+                    color = Color(0xFF94A3B8),
+                    textAlign = TextAlign.Right,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    OutlinedTextField(
+                        value = year,
+                        onValueChange = { year = it },
+                        label = { Text("سال", fontSize = 11.sp, color = Color(0xFF94A3B8)) },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        modifier = Modifier.weight(1.2f),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = Color(0xFF00B0FF),
+                            unfocusedBorderColor = Color.White.copy(alpha = 0.1f)
+                        )
+                    )
+                    OutlinedTextField(
+                        value = month,
+                        onValueChange = { month = it },
+                        label = { Text("ماه", fontSize = 11.sp, color = Color(0xFF94A3B8)) },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        modifier = Modifier.weight(1f),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = Color(0xFF00B0FF),
+                            unfocusedBorderColor = Color.White.copy(alpha = 0.1f)
+                        )
+                    )
+                    OutlinedTextField(
+                        value = day,
+                        onValueChange = { day = it },
+                        label = { Text("روز", fontSize = 11.sp, color = Color(0xFF94A3B8)) },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        modifier = Modifier.weight(1f),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = Color(0xFF00B0FF),
+                            unfocusedBorderColor = Color.White.copy(alpha = 0.1f)
+                        )
+                    )
+                }
+
+                Text(
+                    text = "ساعت ورود:",
+                    fontSize = 12.sp,
+                    color = Color(0xFF94A3B8),
+                    textAlign = TextAlign.Right,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    OutlinedTextField(
+                        value = startH,
+                        onValueChange = { startH = it },
+                        label = { Text("ساعت شروع", fontSize = 10.sp, color = Color(0xFF94A3B8)) },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        modifier = Modifier.weight(1f),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = Color(0xFF00B0FF),
+                            unfocusedBorderColor = Color.White.copy(alpha = 0.1f)
+                        )
+                    )
+                    OutlinedTextField(
+                        value = startM,
+                        onValueChange = { startM = it },
+                        label = { Text("دقیقه شروع", fontSize = 10.sp, color = Color(0xFF94A3B8)) },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        modifier = Modifier.weight(1f),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = Color(0xFF00B0FF),
+                            unfocusedBorderColor = Color.White.copy(alpha = 0.1f)
+                        )
+                    )
+                }
+
+                Text(
+                    text = if (hasEndTime) "ساعت خروج:" else "ساعت خروج (در حال ثبت):",
+                    fontSize = 12.sp,
+                    color = Color(0xFF94A3B8),
+                    textAlign = TextAlign.Right,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    OutlinedTextField(
+                        value = endH,
+                        onValueChange = { endH = it },
+                        label = { Text("ساعت پایان", fontSize = 10.sp, color = Color(0xFF94A3B8)) },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        modifier = Modifier.weight(1f),
+                        enabled = hasEndTime,
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = Color(0xFF00B0FF),
+                            unfocusedBorderColor = Color.White.copy(alpha = 0.1f),
+                            disabledBorderColor = Color.White.copy(alpha = 0.05f),
+                            disabledTextColor = Color.Gray
+                        )
+                    )
+                    OutlinedTextField(
+                        value = endM,
+                        onValueChange = { endM = it },
+                        label = { Text("دقیقه پایان", fontSize = 10.sp, color = Color(0xFF94A3B8)) },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        modifier = Modifier.weight(1f),
+                        enabled = hasEndTime,
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = Color(0xFF00B0FF),
+                            unfocusedBorderColor = Color.White.copy(alpha = 0.1f),
+                            disabledBorderColor = Color.White.copy(alpha = 0.05f),
+                            disabledTextColor = Color.Gray
+                        )
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    val y = year.toIntOrNull() ?: record.jalaliYear
+                    val m = month.toIntOrNull() ?: record.jalaliMonth
+                    val d = day.toIntOrNull() ?: record.jalaliDay
+                    val sh = startH.toIntOrNull() ?: 7
+                    val sm = startM.toIntOrNull() ?: 0
+                    val eh = endH.toIntOrNull() ?: 14
+                    val em = endM.toIntOrNull() ?: 0
+
+                    if (m < 1 || m > 12 || d < 1 || d > JalaliCalendarHelper.getDaysInMonth(y, m)) {
+                        Toast.makeText(context, "تاریخ وارد شده نامعتبر است", Toast.LENGTH_LONG).show()
+                    } else if (sh < 0 || sh > 23 || sm < 0 || sm > 59 || (hasEndTime && (eh < 0 || eh > 23 || em < 0 || em > 59))) {
+                        Toast.makeText(context, "ساعت وارد شده نامعتبر است", Toast.LENGTH_LONG).show()
+                    } else {
+                        val newStartMillis = JalaliCalendarHelper.toEpochMillis(y, m, d, sh, sm)
+                        val newEndMillis = if (hasEndTime) {
+                            val computedEnd = JalaliCalendarHelper.toEpochMillis(y, m, d, eh, em)
+                            if (computedEnd <= newStartMillis) newStartMillis + 60 * 1000 else computedEnd
+                        } else null
+
+                        val updated = record.copy(
+                            jalaliYear = y,
+                            jalaliMonth = m,
+                            jalaliDay = d,
+                            startTimeMillis = newStartMillis,
+                            endTimeMillis = newEndMillis
+                        )
+                        onSave(updated)
+                        onDismiss()
+                    }
+                },
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00B0FF)),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Text("ذخیره تغییرات", color = Color.White, fontWeight = FontWeight.Bold)
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("انصراف", color = Color(0xFF94A3B8), fontWeight = FontWeight.Medium)
+            }
+        }
+    )
 }
