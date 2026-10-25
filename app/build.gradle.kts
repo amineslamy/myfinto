@@ -42,8 +42,13 @@ android {
     }
 
     debug {
-      // Debug APK uses the default Android debug signing configuration.
-      // No custom debug.keystore file is required.
+      // Use the repository's stable signing key in CI when its secrets are available.
+      // Local builds and pull requests without secrets keep the default debug key.
+      val hasCiSigningKey = listOf("KEYSTORE_PATH", "STORE_PASSWORD", "KEY_PASSWORD")
+        .all { !System.getenv(it).isNullOrBlank() }
+      if (hasCiSigningKey) {
+        signingConfig = signingConfigs.getByName("release")
+      }
     }
   }
 

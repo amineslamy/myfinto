@@ -30,8 +30,20 @@ jobs:
     - name: Grant execute permission for gradlew
       run: chmod +x gradlew
 
+    - name: Prepare stable signing key
+      env:
+        ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+      run: |
+        if [ -n "$ANDROID_KEYSTORE_BASE64" ]; then
+          printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > my-upload-key.jks
+        fi
+
     - name: Build with Gradle
       run: ./gradlew assembleDebug --no-daemon
+      env:
+        KEYSTORE_PATH: ${{ github.workspace }}/my-upload-key.jks
+        STORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+        KEY_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
 
     - name: Upload APK to artifacts
       uses: actions/upload-artifact@v4
