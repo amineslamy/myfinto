@@ -17,6 +17,7 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.*
+import com.example.ui.theme.Typography
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -49,13 +50,14 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             MaterialTheme(
-                colorScheme = darkColorScheme(
+                colorScheme = lightColorScheme(
                     primary = Color(0xFF00B0FF),      // Vibrant Blue from Vivid Palette
                     secondary = Color(0xFF00E5FF),    // Neon Cyan-Blue
-                    background = Color(0xFF121212),   // Dark elegant grey
-                    surface = Color(0xFF1E1E1E),      // Elevated surface grey
-                    error = Color(0xFFEF5350)         // Soft red
-                )
+                    background = Color(0xFFF7F9FC),
+                    surface = Color.White,
+                    error = Color(0xFFEF5350)
+                ),
+                typography = Typography
             ) {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
@@ -84,7 +86,7 @@ fun TimeTrackerApp(viewModel: TimeTrackingViewModel = viewModel()) {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .background(Color(0xFF121212))
+                        .background(Color(0xFFF7F9FC))
                         .statusBarsPadding()
                         .padding(vertical = 12.dp, horizontal = 20.dp),
                     contentAlignment = Alignment.CenterStart
@@ -104,20 +106,20 @@ fun TimeTrackerApp(viewModel: TimeTrackingViewModel = viewModel()) {
                                     .background(Color(0xFF00B0FF), shape = RoundedCornerShape(12.dp)),
                                 contentAlignment = Alignment.Center
                             ) {
-                                Text("🕒", fontSize = 20.sp, color = Color.White)
+                                Text("🕒", fontSize = 20.sp, color = Color(0xFF1F2937))
                             }
                             Text(
                                 text = "ساعت‌زن کارکرد",
                                 fontSize = 18.sp,
                                 fontWeight = FontWeight.Black,
-                                color = Color.White
+                                color = Color(0xFF1F2937)
                             )
                         }
                         Box(
                             modifier = Modifier
                                 .size(40.dp)
-                                .background(Color(0xFF1E1E1E), shape = RoundedCornerShape(50))
-                                .border(BorderStroke(1.dp, Color.White.copy(alpha = 0.1f)), RoundedCornerShape(50)),
+                                .background(Color(0xFF1F2937), shape = RoundedCornerShape(50))
+                                .border(BorderStroke(1.dp, Color(0xFF1F2937).copy(alpha = 0.1f)), RoundedCornerShape(50)),
                             contentAlignment = Alignment.Center
                         ) {
                             Text("⚙️", fontSize = 16.sp)
@@ -127,13 +129,13 @@ fun TimeTrackerApp(viewModel: TimeTrackingViewModel = viewModel()) {
             },
             bottomBar = {
                 NavigationBar(
-                    containerColor = Color(0xFF1E1E1E),
+                    containerColor = Color.White,
                     modifier = Modifier
                         .navigationBarsPadding()
                         .drawWithContent {
                             drawContent()
                             drawLine(
-                                color = Color.White.copy(alpha = 0.05f),
+                                color = Color(0xFF1F2937).copy(alpha = 0.05f),
                                 start = Offset(0f, 0f),
                                 end = Offset(size.width, 0f),
                                 strokeWidth = 3f
@@ -254,9 +256,9 @@ fun TimeRegistrationTab(
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .border(BorderStroke(1.dp, Color.White.copy(alpha = 0.05f)), RoundedCornerShape(24.dp)),
+                    .border(BorderStroke(1.dp, Color(0xFF1F2937).copy(alpha = 0.05f)), RoundedCornerShape(24.dp)),
                 shape = RoundedCornerShape(24.dp),
-                colors = CardDefaults.cardColors(containerColor = Color(0xFF1E1E1E)),
+                colors = CardDefaults.cardColors(containerColor = Color.White),
                 elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
             ) {
                 Column(
@@ -273,7 +275,7 @@ fun TimeRegistrationTab(
                             text = "وضعیت کارکرد $monthName ${today.year}",
                             fontSize = 14.sp,
                             fontWeight = FontWeight.Medium,
-                            color = Color(0xFF94A3B8)
+                            color = Color(0xFF64748B)
                         )
                         val isWorking = activeRecord != null
                         Box(
@@ -308,14 +310,14 @@ fun TimeRegistrationTab(
                         ) {
                             Text("کارکرد کل", fontSize = 11.sp, color = Color(0xFF64748B))
                             Spacer(modifier = Modifier.height(2.dp))
-                            Text(totalWorkedString, fontSize = 20.sp, fontWeight = FontWeight.Black, color = Color.White)
+                            Text(totalWorkedString, fontSize = 20.sp, fontWeight = FontWeight.Black, color = Color(0xFF1F2937))
                         }
 
                         Box(
                             modifier = Modifier
                                 .height(32.dp)
                                 .width(1.dp)
-                                .background(Color.White.copy(alpha = 0.05f))
+                                .background(Color(0xFF1F2937).copy(alpha = 0.05f))
                         )
 
                         Column(
@@ -324,14 +326,14 @@ fun TimeRegistrationTab(
                         ) {
                             Text("موظفی", fontSize = 11.sp, color = Color(0xFF64748B))
                             Spacer(modifier = Modifier.height(2.dp))
-                            Text(targetString, fontSize = 20.sp, fontWeight = FontWeight.Black, color = Color.White)
+                            Text(targetString, fontSize = 20.sp, fontWeight = FontWeight.Black, color = Color(0xFF1F2937))
                         }
 
                         Box(
                             modifier = Modifier
                                 .height(32.dp)
                                 .width(1.dp)
-                                .background(Color.White.copy(alpha = 0.05f))
+                                .background(Color(0xFF1F2937).copy(alpha = 0.05f))
                         )
 
                         Column(
@@ -356,7 +358,7 @@ fun TimeRegistrationTab(
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(6.dp)
-                            .background(Color.White.copy(alpha = 0.05f), RoundedCornerShape(50))
+                            .background(Color(0xFF1F2937).copy(alpha = 0.05f), RoundedCornerShape(50))
                     ) {
                         Box(
                             modifier = Modifier
@@ -422,7 +424,7 @@ fun TimeRegistrationTab(
                     Box(
                         modifier = Modifier
                             .size(175.dp)
-                            .border(8.dp, Color(0xFF121212), RoundedCornerShape(100.dp))
+                            .border(8.dp, Color(0xFFF7F9FC), RoundedCornerShape(100.dp))
                             .clip(RoundedCornerShape(100.dp))
                             .background(
                                 Brush.linearGradient(
@@ -444,13 +446,13 @@ fun TimeRegistrationTab(
                                 text = if (isWorking) "اتمام کار" else "شروع کار",
                                 fontSize = 24.sp,
                                 fontWeight = FontWeight.Black,
-                                color = Color.White
+                                color = Color(0xFF1F2937)
                             )
                             Spacer(modifier = Modifier.height(2.dp))
                             Text(
                                 text = if (isWorking) "PRESS TO STOP" else "PRESS TO START",
                                 fontSize = 9.sp,
-                                color = Color.White.copy(alpha = 0.6f),
+                                color = Color(0xFF1F2937).copy(alpha = 0.6f),
                                 fontWeight = FontWeight.Bold,
                                 letterSpacing = 1.sp
                             )
@@ -466,7 +468,7 @@ fun TimeRegistrationTab(
             ) {
                 Text(
                     text = lastExitText,
-                    color = Color(0xFF94A3B8),
+                    color = Color(0xFF64748B),
                     fontSize = 13.sp,
                     fontWeight = FontWeight.Medium
                 )
@@ -481,7 +483,7 @@ fun TimeRegistrationTab(
         }
 
         item {
-            HorizontalDivider(color = Color.White.copy(alpha = 0.05f), modifier = Modifier.padding(vertical = 4.dp))
+            HorizontalDivider(color = Color(0xFF1F2937).copy(alpha = 0.05f), modifier = Modifier.padding(vertical = 4.dp))
         }
 
         item {
@@ -493,7 +495,7 @@ fun TimeRegistrationTab(
                 text = "سوابق اخیر (۵۰ مورد آخر)",
                 fontSize = 15.sp,
                 fontWeight = FontWeight.Bold,
-                color = Color.White,
+                color = Color(0xFF1F2937),
                 modifier = Modifier.padding(top = 8.dp)
             )
         }
@@ -544,8 +546,8 @@ fun ManualRecordSection(viewModel: TimeTrackingViewModel) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .border(BorderStroke(1.dp, Color.White.copy(alpha = 0.05f)), RoundedCornerShape(20.dp)),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFF1E1E1E))
+            .border(BorderStroke(1.dp, Color(0xFF1F2937).copy(alpha = 0.05f)), RoundedCornerShape(20.dp)),
+        colors = CardDefaults.cardColors(containerColor = Color.White)
     ) {
         Column(
             modifier = Modifier.padding(18.dp),
@@ -566,34 +568,34 @@ fun ManualRecordSection(viewModel: TimeTrackingViewModel) {
                 OutlinedTextField(
                     value = year,
                     onValueChange = { year = it },
-                    label = { Text("سال", fontSize = 11.sp, color = Color(0xFF94A3B8)) },
+                    label = { Text("سال", fontSize = 11.sp, color = Color(0xFF64748B)) },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     modifier = Modifier.weight(1.2f),
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedBorderColor = Color(0xFF00B0FF),
-                        unfocusedBorderColor = Color.White.copy(alpha = 0.1f)
+                        unfocusedBorderColor = Color(0xFF1F2937).copy(alpha = 0.1f)
                     )
                 )
                 OutlinedTextField(
                     value = month,
                     onValueChange = { month = it },
-                    label = { Text("ماه", fontSize = 11.sp, color = Color(0xFF94A3B8)) },
+                    label = { Text("ماه", fontSize = 11.sp, color = Color(0xFF64748B)) },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     modifier = Modifier.weight(1f),
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedBorderColor = Color(0xFF00B0FF),
-                        unfocusedBorderColor = Color.White.copy(alpha = 0.1f)
+                        unfocusedBorderColor = Color(0xFF1F2937).copy(alpha = 0.1f)
                     )
                 )
                 OutlinedTextField(
                     value = day,
                     onValueChange = { day = it },
-                    label = { Text("روز", fontSize = 11.sp, color = Color(0xFF94A3B8)) },
+                    label = { Text("روز", fontSize = 11.sp, color = Color(0xFF64748B)) },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     modifier = Modifier.weight(1f),
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedBorderColor = Color(0xFF00B0FF),
-                        unfocusedBorderColor = Color.White.copy(alpha = 0.1f)
+                        unfocusedBorderColor = Color(0xFF1F2937).copy(alpha = 0.1f)
                     )
                 )
             }
@@ -607,23 +609,23 @@ fun ManualRecordSection(viewModel: TimeTrackingViewModel) {
                 OutlinedTextField(
                     value = startHour,
                     onValueChange = { startHour = it },
-                    label = { Text("ساعت شروع", fontSize = 10.sp, color = Color(0xFF94A3B8)) },
+                    label = { Text("ساعت شروع", fontSize = 10.sp, color = Color(0xFF64748B)) },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     modifier = Modifier.weight(1f),
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedBorderColor = Color(0xFF00B0FF),
-                        unfocusedBorderColor = Color.White.copy(alpha = 0.1f)
+                        unfocusedBorderColor = Color(0xFF1F2937).copy(alpha = 0.1f)
                     )
                 )
                 OutlinedTextField(
                     value = startMinute,
                     onValueChange = { startMinute = it },
-                    label = { Text("دقیقه شروع", fontSize = 10.sp, color = Color(0xFF94A3B8)) },
+                    label = { Text("دقیقه شروع", fontSize = 10.sp, color = Color(0xFF64748B)) },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     modifier = Modifier.weight(1f),
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedBorderColor = Color(0xFF00B0FF),
-                        unfocusedBorderColor = Color.White.copy(alpha = 0.1f)
+                        unfocusedBorderColor = Color(0xFF1F2937).copy(alpha = 0.1f)
                     )
                 )
             }
@@ -636,23 +638,23 @@ fun ManualRecordSection(viewModel: TimeTrackingViewModel) {
                 OutlinedTextField(
                     value = endHour,
                     onValueChange = { endHour = it },
-                    label = { Text("ساعت پایان", fontSize = 10.sp, color = Color(0xFF94A3B8)) },
+                    label = { Text("ساعت پایان", fontSize = 10.sp, color = Color(0xFF64748B)) },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     modifier = Modifier.weight(1f),
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedBorderColor = Color(0xFF00B0FF),
-                        unfocusedBorderColor = Color.White.copy(alpha = 0.1f)
+                        unfocusedBorderColor = Color(0xFF1F2937).copy(alpha = 0.1f)
                     )
                 )
                 OutlinedTextField(
                     value = endMinute,
                     onValueChange = { endMinute = it },
-                    label = { Text("دقیقه پایان", fontSize = 10.sp, color = Color(0xFF94A3B8)) },
+                    label = { Text("دقیقه پایان", fontSize = 10.sp, color = Color(0xFF64748B)) },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     modifier = Modifier.weight(1f),
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedBorderColor = Color(0xFF00B0FF),
-                        unfocusedBorderColor = Color.White.copy(alpha = 0.1f)
+                        unfocusedBorderColor = Color(0xFF1F2937).copy(alpha = 0.1f)
                     )
                 )
             }
@@ -683,7 +685,7 @@ fun ManualRecordSection(viewModel: TimeTrackingViewModel) {
                 shape = RoundedCornerShape(12.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00B0FF))
             ) {
-                Text("ثبت کارکرد دستی", fontWeight = FontWeight.Bold, color = Color.White)
+                Text("ثبت کارکرد دستی", fontWeight = FontWeight.Bold, color = Color(0xFF1F2937))
             }
         }
     }
@@ -711,9 +713,9 @@ fun RecordItem(record: TimeRecord, onEdit: () -> Unit, onDelete: () -> Unit) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .border(BorderStroke(1.dp, Color.White.copy(alpha = 0.05f)), RoundedCornerShape(16.dp)),
+            .border(BorderStroke(1.dp, Color(0xFF1F2937).copy(alpha = 0.05f)), RoundedCornerShape(16.dp)),
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFF1E1E1E))
+        colors = CardDefaults.cardColors(containerColor = Color.White)
     ) {
         Row(
             modifier = Modifier
@@ -728,7 +730,7 @@ fun RecordItem(record: TimeRecord, onEdit: () -> Unit, onDelete: () -> Unit) {
                             if (record.isManual) " (ثبت دستی)" else "",
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Color.White
+                    color = Color(0xFF1F2937)
                 )
                 Text(
                     text = "ساعت حضور: $startTime الی $endTime",
@@ -821,9 +823,9 @@ fun ReportsTab(viewModel: TimeTrackingViewModel) {
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .border(BorderStroke(1.dp, Color.White.copy(alpha = 0.05f)), RoundedCornerShape(20.dp)),
+                    .border(BorderStroke(1.dp, Color(0xFF1F2937).copy(alpha = 0.05f)), RoundedCornerShape(20.dp)),
                 shape = RoundedCornerShape(20.dp),
-                colors = CardDefaults.cardColors(containerColor = Color(0xFF1E1E1E))
+                colors = CardDefaults.cardColors(containerColor = Color.White)
             ) {
                 Column(
                     modifier = Modifier.padding(18.dp),
@@ -843,34 +845,34 @@ fun ReportsTab(viewModel: TimeTrackingViewModel) {
                         OutlinedTextField(
                             value = targetYear,
                             onValueChange = { targetYear = it },
-                            label = { Text("سال", color = Color(0xFF94A3B8), fontSize = 11.sp) },
+                            label = { Text("سال", color = Color(0xFF64748B), fontSize = 11.sp) },
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                             modifier = Modifier.weight(1f),
                             colors = OutlinedTextFieldDefaults.colors(
                                 focusedBorderColor = Color(0xFF00B0FF),
-                                unfocusedBorderColor = Color.White.copy(alpha = 0.1f)
+                                unfocusedBorderColor = Color(0xFF1F2937).copy(alpha = 0.1f)
                             )
                         )
                         OutlinedTextField(
                             value = targetMonth,
                             onValueChange = { targetMonth = it },
-                            label = { Text("ماه", color = Color(0xFF94A3B8), fontSize = 11.sp) },
+                            label = { Text("ماه", color = Color(0xFF64748B), fontSize = 11.sp) },
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                             modifier = Modifier.weight(1f),
                             colors = OutlinedTextFieldDefaults.colors(
                                 focusedBorderColor = Color(0xFF00B0FF),
-                                unfocusedBorderColor = Color.White.copy(alpha = 0.1f)
+                                unfocusedBorderColor = Color(0xFF1F2937).copy(alpha = 0.1f)
                             )
                         )
                         OutlinedTextField(
                             value = targetHoursInput,
                             onValueChange = { targetHoursInput = it },
-                            label = { Text("ساعت موظفی", color = Color(0xFF94A3B8), fontSize = 11.sp) },
+                            label = { Text("ساعت موظفی", color = Color(0xFF64748B), fontSize = 11.sp) },
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                             modifier = Modifier.weight(1.5f),
                             colors = OutlinedTextFieldDefaults.colors(
                                 focusedBorderColor = Color(0xFF00B0FF),
-                                unfocusedBorderColor = Color.White.copy(alpha = 0.1f)
+                                unfocusedBorderColor = Color(0xFF1F2937).copy(alpha = 0.1f)
                             )
                         )
                     }
@@ -893,7 +895,7 @@ fun ReportsTab(viewModel: TimeTrackingViewModel) {
                         shape = RoundedCornerShape(12.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00B0FF))
                     ) {
-                        Text("ثبت موظفی ماه", fontWeight = FontWeight.Bold, color = Color.White)
+                        Text("ثبت موظفی ماه", fontWeight = FontWeight.Bold, color = Color(0xFF1F2937))
                     }
                 }
             }
@@ -904,9 +906,9 @@ fun ReportsTab(viewModel: TimeTrackingViewModel) {
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .border(BorderStroke(1.dp, Color.White.copy(alpha = 0.05f)), RoundedCornerShape(20.dp)),
+                    .border(BorderStroke(1.dp, Color(0xFF1F2937).copy(alpha = 0.05f)), RoundedCornerShape(20.dp)),
                 shape = RoundedCornerShape(20.dp),
-                colors = CardDefaults.cardColors(containerColor = Color(0xFF1E1E1E))
+                colors = CardDefaults.cardColors(containerColor = Color.White)
             ) {
                 Column(
                     modifier = Modifier.padding(18.dp),
@@ -919,7 +921,7 @@ fun ReportsTab(viewModel: TimeTrackingViewModel) {
                         color = Color(0xFF00B0FF)
                     )
 
-                    Text("تاریخ شروع بازه شمسی:", fontSize = 12.sp, color = Color(0xFF94A3B8))
+                    Text("تاریخ شروع بازه شمسی:", fontSize = 12.sp, color = Color(0xFF64748B))
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -927,39 +929,39 @@ fun ReportsTab(viewModel: TimeTrackingViewModel) {
                         OutlinedTextField(
                             value = startY,
                             onValueChange = { startY = it },
-                            label = { Text("سال", color = Color(0xFF94A3B8), fontSize = 11.sp) },
+                            label = { Text("سال", color = Color(0xFF64748B), fontSize = 11.sp) },
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                             modifier = Modifier.weight(1f),
                             colors = OutlinedTextFieldDefaults.colors(
                                 focusedBorderColor = Color(0xFF00B0FF),
-                                unfocusedBorderColor = Color.White.copy(alpha = 0.1f)
+                                unfocusedBorderColor = Color(0xFF1F2937).copy(alpha = 0.1f)
                             )
                         )
                         OutlinedTextField(
                             value = startM,
                             onValueChange = { startM = it },
-                            label = { Text("ماه", color = Color(0xFF94A3B8), fontSize = 11.sp) },
+                            label = { Text("ماه", color = Color(0xFF64748B), fontSize = 11.sp) },
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                             modifier = Modifier.weight(1f),
                             colors = OutlinedTextFieldDefaults.colors(
                                 focusedBorderColor = Color(0xFF00B0FF),
-                                unfocusedBorderColor = Color.White.copy(alpha = 0.1f)
+                                unfocusedBorderColor = Color(0xFF1F2937).copy(alpha = 0.1f)
                             )
                         )
                         OutlinedTextField(
                             value = startD,
                             onValueChange = { startD = it },
-                            label = { Text("روز", color = Color(0xFF94A3B8), fontSize = 11.sp) },
+                            label = { Text("روز", color = Color(0xFF64748B), fontSize = 11.sp) },
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                             modifier = Modifier.weight(1f),
                             colors = OutlinedTextFieldDefaults.colors(
                                 focusedBorderColor = Color(0xFF00B0FF),
-                                unfocusedBorderColor = Color.White.copy(alpha = 0.1f)
+                                unfocusedBorderColor = Color(0xFF1F2937).copy(alpha = 0.1f)
                             )
                         )
                     }
 
-                    Text("تاریخ پایان بازه شمسی:", fontSize = 12.sp, color = Color(0xFF94A3B8))
+                    Text("تاریخ پایان بازه شمسی:", fontSize = 12.sp, color = Color(0xFF64748B))
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -967,34 +969,34 @@ fun ReportsTab(viewModel: TimeTrackingViewModel) {
                         OutlinedTextField(
                             value = endY,
                             onValueChange = { endY = it },
-                            label = { Text("سال", color = Color(0xFF94A3B8), fontSize = 11.sp) },
+                            label = { Text("سال", color = Color(0xFF64748B), fontSize = 11.sp) },
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                             modifier = Modifier.weight(1f),
                             colors = OutlinedTextFieldDefaults.colors(
                                 focusedBorderColor = Color(0xFF00B0FF),
-                                unfocusedBorderColor = Color.White.copy(alpha = 0.1f)
+                                unfocusedBorderColor = Color(0xFF1F2937).copy(alpha = 0.1f)
                             )
                         )
                         OutlinedTextField(
                             value = endM,
                             onValueChange = { endM = it },
-                            label = { Text("ماه", color = Color(0xFF94A3B8), fontSize = 11.sp) },
+                            label = { Text("ماه", color = Color(0xFF64748B), fontSize = 11.sp) },
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                             modifier = Modifier.weight(1f),
                             colors = OutlinedTextFieldDefaults.colors(
                                 focusedBorderColor = Color(0xFF00B0FF),
-                                unfocusedBorderColor = Color.White.copy(alpha = 0.1f)
+                                unfocusedBorderColor = Color(0xFF1F2937).copy(alpha = 0.1f)
                             )
                         )
                         OutlinedTextField(
                             value = endD,
                             onValueChange = { endD = it },
-                            label = { Text("روز", color = Color(0xFF94A3B8), fontSize = 11.sp) },
+                            label = { Text("روز", color = Color(0xFF64748B), fontSize = 11.sp) },
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                             modifier = Modifier.weight(1f),
                             colors = OutlinedTextFieldDefaults.colors(
                                 focusedBorderColor = Color(0xFF00B0FF),
-                                unfocusedBorderColor = Color.White.copy(alpha = 0.1f)
+                                unfocusedBorderColor = Color(0xFF1F2937).copy(alpha = 0.1f)
                             )
                         )
                     }
@@ -1017,7 +1019,7 @@ fun ReportsTab(viewModel: TimeTrackingViewModel) {
                         shape = RoundedCornerShape(12.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00E5FF))
                     ) {
-                        Text("محاسبه گزارش کارکرد بازه", color = Color.White, fontWeight = FontWeight.Bold)
+                        Text("محاسبه گزارش کارکرد بازه", color = Color(0xFF1F2937), fontWeight = FontWeight.Bold)
                     }
                 }
             }
@@ -1028,9 +1030,9 @@ fun ReportsTab(viewModel: TimeTrackingViewModel) {
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .border(BorderStroke(1.dp, Color.White.copy(alpha = 0.05f)), RoundedCornerShape(20.dp)),
+                    .border(BorderStroke(1.dp, Color(0xFF1F2937).copy(alpha = 0.05f)), RoundedCornerShape(20.dp)),
                 shape = RoundedCornerShape(20.dp),
-                colors = CardDefaults.cardColors(containerColor = Color(0xFF1E1E1E))
+                colors = CardDefaults.cardColors(containerColor = Color.White)
             ) {
                 Column(
                     modifier = Modifier.padding(18.dp),
@@ -1040,18 +1042,18 @@ fun ReportsTab(viewModel: TimeTrackingViewModel) {
                         text = "خلاصه وضعیت کارکرد در بازه انتخابی",
                         fontSize = 15.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Color.White
+                        color = Color(0xFF1F2937)
                     )
 
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Text("کل ساعات کارکرد واقعی:", fontSize = 14.sp, color = Color(0xFF94A3B8))
+                        Text("کل ساعات کارکرد واقعی:", fontSize = 14.sp, color = Color(0xFF64748B))
                         Text(
                             text = String.format(Locale.US, "%.2f", reportWorkedHours) + " ساعت",
                             fontWeight = FontWeight.Bold,
-                            color = Color.White
+                            color = Color(0xFF1F2937)
                         )
                     }
 
@@ -1059,11 +1061,11 @@ fun ReportsTab(viewModel: TimeTrackingViewModel) {
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Text("کل ساعات موظفی این بازه:", fontSize = 14.sp, color = Color(0xFF94A3B8))
+                        Text("کل ساعات موظفی این بازه:", fontSize = 14.sp, color = Color(0xFF64748B))
                         Text(
                             text = String.format(Locale.US, "%.2f", reportObligatoryHours) + " ساعت",
                             fontWeight = FontWeight.Bold,
-                            color = Color.White
+                            color = Color(0xFF1F2937)
                         )
                     }
 
@@ -1075,7 +1077,7 @@ fun ReportsTab(viewModel: TimeTrackingViewModel) {
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Text(deltaLabel, fontSize = 14.sp, color = Color(0xFF94A3B8))
+                        Text(deltaLabel, fontSize = 14.sp, color = Color(0xFF64748B))
                         Text(
                             text = String.format(Locale.US, "%+.2f", delta) + " ساعت",
                             fontWeight = FontWeight.Bold,
@@ -1091,9 +1093,9 @@ fun ReportsTab(viewModel: TimeTrackingViewModel) {
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .border(BorderStroke(1.dp, Color.White.copy(alpha = 0.05f)), RoundedCornerShape(20.dp)),
+                    .border(BorderStroke(1.dp, Color(0xFF1F2937).copy(alpha = 0.05f)), RoundedCornerShape(20.dp)),
                 shape = RoundedCornerShape(20.dp),
-                colors = CardDefaults.cardColors(containerColor = Color(0xFF1E1E1E))
+                colors = CardDefaults.cardColors(containerColor = Color.White)
             ) {
                 Column(
                     modifier = Modifier.padding(18.dp),
@@ -1108,10 +1110,10 @@ fun ReportsTab(viewModel: TimeTrackingViewModel) {
                     Text(
                         text = "مشاهده و مدیریت سوابق ورود و خروج ثبت شده در بازه زمانی مشخص شده",
                         fontSize = 12.sp,
-                        color = Color(0xFF94A3B8)
+                        color = Color(0xFF64748B)
                     )
 
-                    Text("تاریخ شروع بازه:", fontSize = 12.sp, color = Color(0xFF94A3B8))
+                    Text("تاریخ شروع بازه:", fontSize = 12.sp, color = Color(0xFF64748B))
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -1119,39 +1121,39 @@ fun ReportsTab(viewModel: TimeTrackingViewModel) {
                         OutlinedTextField(
                             value = viewRangeSY,
                             onValueChange = { viewRangeSY = it },
-                            label = { Text("سال", color = Color(0xFF94A3B8), fontSize = 11.sp) },
+                            label = { Text("سال", color = Color(0xFF64748B), fontSize = 11.sp) },
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                             modifier = Modifier.weight(1f),
                             colors = OutlinedTextFieldDefaults.colors(
                                 focusedBorderColor = Color(0xFF00B0FF),
-                                unfocusedBorderColor = Color.White.copy(alpha = 0.1f)
+                                unfocusedBorderColor = Color(0xFF1F2937).copy(alpha = 0.1f)
                             )
                         )
                         OutlinedTextField(
                             value = viewRangeSM,
                             onValueChange = { viewRangeSM = it },
-                            label = { Text("ماه", color = Color(0xFF94A3B8), fontSize = 11.sp) },
+                            label = { Text("ماه", color = Color(0xFF64748B), fontSize = 11.sp) },
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                             modifier = Modifier.weight(1f),
                             colors = OutlinedTextFieldDefaults.colors(
                                 focusedBorderColor = Color(0xFF00B0FF),
-                                unfocusedBorderColor = Color.White.copy(alpha = 0.1f)
+                                unfocusedBorderColor = Color(0xFF1F2937).copy(alpha = 0.1f)
                             )
                         )
                         OutlinedTextField(
                             value = viewRangeSD,
                             onValueChange = { viewRangeSD = it },
-                            label = { Text("روز", color = Color(0xFF94A3B8), fontSize = 11.sp) },
+                            label = { Text("روز", color = Color(0xFF64748B), fontSize = 11.sp) },
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                             modifier = Modifier.weight(1f),
                             colors = OutlinedTextFieldDefaults.colors(
                                 focusedBorderColor = Color(0xFF00B0FF),
-                                unfocusedBorderColor = Color.White.copy(alpha = 0.1f)
+                                unfocusedBorderColor = Color(0xFF1F2937).copy(alpha = 0.1f)
                             )
                         )
                     }
 
-                    Text("تاریخ پایان بازه:", fontSize = 12.sp, color = Color(0xFF94A3B8))
+                    Text("تاریخ پایان بازه:", fontSize = 12.sp, color = Color(0xFF64748B))
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -1159,34 +1161,34 @@ fun ReportsTab(viewModel: TimeTrackingViewModel) {
                         OutlinedTextField(
                             value = viewRangeEY,
                             onValueChange = { viewRangeEY = it },
-                            label = { Text("سال", color = Color(0xFF94A3B8), fontSize = 11.sp) },
+                            label = { Text("سال", color = Color(0xFF64748B), fontSize = 11.sp) },
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                             modifier = Modifier.weight(1f),
                             colors = OutlinedTextFieldDefaults.colors(
                                 focusedBorderColor = Color(0xFF00B0FF),
-                                unfocusedBorderColor = Color.White.copy(alpha = 0.1f)
+                                unfocusedBorderColor = Color(0xFF1F2937).copy(alpha = 0.1f)
                             )
                         )
                         OutlinedTextField(
                             value = viewRangeEM,
                             onValueChange = { viewRangeEM = it },
-                            label = { Text("ماه", color = Color(0xFF94A3B8), fontSize = 11.sp) },
+                            label = { Text("ماه", color = Color(0xFF64748B), fontSize = 11.sp) },
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                             modifier = Modifier.weight(1f),
                             colors = OutlinedTextFieldDefaults.colors(
                                 focusedBorderColor = Color(0xFF00B0FF),
-                                unfocusedBorderColor = Color.White.copy(alpha = 0.1f)
+                                unfocusedBorderColor = Color(0xFF1F2937).copy(alpha = 0.1f)
                             )
                         )
                         OutlinedTextField(
                             value = viewRangeED,
                             onValueChange = { viewRangeED = it },
-                            label = { Text("روز", color = Color(0xFF94A3B8), fontSize = 11.sp) },
+                            label = { Text("روز", color = Color(0xFF64748B), fontSize = 11.sp) },
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                             modifier = Modifier.weight(1f),
                             colors = OutlinedTextFieldDefaults.colors(
                                 focusedBorderColor = Color(0xFF00B0FF),
-                                unfocusedBorderColor = Color.White.copy(alpha = 0.1f)
+                                unfocusedBorderColor = Color(0xFF1F2937).copy(alpha = 0.1f)
                             )
                         )
                     }
@@ -1207,7 +1209,7 @@ fun ReportsTab(viewModel: TimeTrackingViewModel) {
                     }
 
                     HorizontalDivider(
-                        color = Color.White.copy(alpha = 0.1f),
+                        color = Color(0xFF1F2937).copy(alpha = 0.1f),
                         modifier = Modifier.padding(vertical = 4.dp)
                     )
 
@@ -1222,7 +1224,7 @@ fun ReportsTab(viewModel: TimeTrackingViewModel) {
                         Text(
                             text = "هیچ سابقه کارکردی در این بازه زمانی ثبت نشده است.",
                             fontSize = 12.sp,
-                            color = Color(0xFF94A3B8),
+                            color = Color(0xFF64748B),
                             modifier = Modifier.padding(vertical = 8.dp)
                         )
                     } else {
@@ -1248,9 +1250,9 @@ fun ReportsTab(viewModel: TimeTrackingViewModel) {
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .border(BorderStroke(1.dp, Color.White.copy(alpha = 0.05f)), RoundedCornerShape(20.dp)),
+                    .border(BorderStroke(1.dp, Color(0xFF1F2937).copy(alpha = 0.05f)), RoundedCornerShape(20.dp)),
                 shape = RoundedCornerShape(20.dp),
-                colors = CardDefaults.cardColors(containerColor = Color(0xFF1E1E1E))
+                colors = CardDefaults.cardColors(containerColor = Color.White)
             ) {
                 Column(
                     modifier = Modifier.padding(18.dp),
@@ -1265,7 +1267,7 @@ fun ReportsTab(viewModel: TimeTrackingViewModel) {
                     Text(
                         text = "گزارش ماهانه خروجی شامل ساعات ورود و خروج همپوشانی شده به صورت کاملاً فارسی و سازگار با سیستم های مالی اداری است.",
                         fontSize = 12.sp,
-                        color = Color(0xFF94A3B8)
+                        color = Color(0xFF64748B)
                     )
 
                     Row(
@@ -1275,23 +1277,23 @@ fun ReportsTab(viewModel: TimeTrackingViewModel) {
                         OutlinedTextField(
                             value = exportYear,
                             onValueChange = { exportYear = it },
-                            label = { Text("سال شمسی", color = Color(0xFF94A3B8), fontSize = 11.sp) },
+                            label = { Text("سال شمسی", color = Color(0xFF64748B), fontSize = 11.sp) },
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                             modifier = Modifier.weight(1f),
                             colors = OutlinedTextFieldDefaults.colors(
                                 focusedBorderColor = Color(0xFF00B0FF),
-                                unfocusedBorderColor = Color.White.copy(alpha = 0.1f)
+                                unfocusedBorderColor = Color(0xFF1F2937).copy(alpha = 0.1f)
                             )
                         )
                         OutlinedTextField(
                             value = exportMonth,
                             onValueChange = { exportMonth = it },
-                            label = { Text("ماه", color = Color(0xFF94A3B8), fontSize = 11.sp) },
+                            label = { Text("ماه", color = Color(0xFF64748B), fontSize = 11.sp) },
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                             modifier = Modifier.weight(1f),
                             colors = OutlinedTextFieldDefaults.colors(
                                 focusedBorderColor = Color(0xFF00B0FF),
-                                unfocusedBorderColor = Color.White.copy(alpha = 0.1f)
+                                unfocusedBorderColor = Color(0xFF1F2937).copy(alpha = 0.1f)
                             )
                         )
                     }
@@ -1322,7 +1324,7 @@ fun ReportsTab(viewModel: TimeTrackingViewModel) {
                         shape = RoundedCornerShape(12.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00B0FF))
                     ) {
-                        Text("تولید و دانلود گزارش کارکرد ماه", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                        Text("تولید و دانلود گزارش کارکرد ماه", color = Color(0xFF1F2937), fontWeight = FontWeight.Bold, fontSize = 14.sp)
                     }
                 }
             }
@@ -1372,7 +1374,7 @@ fun EditRecordDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        containerColor = Color(0xFF1E1E1E),
+        containerColor = Color.White,
         title = {
             Text(
                 text = "ویرایش سابقه کارکرد",
@@ -1391,7 +1393,7 @@ fun EditRecordDialog(
                 Text(
                     text = "تاریخ شمسی ثبت:",
                     fontSize = 12.sp,
-                    color = Color(0xFF94A3B8),
+                    color = Color(0xFF64748B),
                     textAlign = TextAlign.Right,
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -1402,34 +1404,34 @@ fun EditRecordDialog(
                     OutlinedTextField(
                         value = year,
                         onValueChange = { year = it },
-                        label = { Text("سال", fontSize = 11.sp, color = Color(0xFF94A3B8)) },
+                        label = { Text("سال", fontSize = 11.sp, color = Color(0xFF64748B)) },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         modifier = Modifier.weight(1.2f),
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = Color(0xFF00B0FF),
-                            unfocusedBorderColor = Color.White.copy(alpha = 0.1f)
+                            unfocusedBorderColor = Color(0xFF1F2937).copy(alpha = 0.1f)
                         )
                     )
                     OutlinedTextField(
                         value = month,
                         onValueChange = { month = it },
-                        label = { Text("ماه", fontSize = 11.sp, color = Color(0xFF94A3B8)) },
+                        label = { Text("ماه", fontSize = 11.sp, color = Color(0xFF64748B)) },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         modifier = Modifier.weight(1f),
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = Color(0xFF00B0FF),
-                            unfocusedBorderColor = Color.White.copy(alpha = 0.1f)
+                            unfocusedBorderColor = Color(0xFF1F2937).copy(alpha = 0.1f)
                         )
                     )
                     OutlinedTextField(
                         value = day,
                         onValueChange = { day = it },
-                        label = { Text("روز", fontSize = 11.sp, color = Color(0xFF94A3B8)) },
+                        label = { Text("روز", fontSize = 11.sp, color = Color(0xFF64748B)) },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         modifier = Modifier.weight(1f),
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = Color(0xFF00B0FF),
-                            unfocusedBorderColor = Color.White.copy(alpha = 0.1f)
+                            unfocusedBorderColor = Color(0xFF1F2937).copy(alpha = 0.1f)
                         )
                     )
                 }
@@ -1437,7 +1439,7 @@ fun EditRecordDialog(
                 Text(
                     text = "ساعت ورود:",
                     fontSize = 12.sp,
-                    color = Color(0xFF94A3B8),
+                    color = Color(0xFF64748B),
                     textAlign = TextAlign.Right,
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -1448,23 +1450,23 @@ fun EditRecordDialog(
                     OutlinedTextField(
                         value = startH,
                         onValueChange = { startH = it },
-                        label = { Text("ساعت شروع", fontSize = 10.sp, color = Color(0xFF94A3B8)) },
+                        label = { Text("ساعت شروع", fontSize = 10.sp, color = Color(0xFF64748B)) },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         modifier = Modifier.weight(1f),
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = Color(0xFF00B0FF),
-                            unfocusedBorderColor = Color.White.copy(alpha = 0.1f)
+                            unfocusedBorderColor = Color(0xFF1F2937).copy(alpha = 0.1f)
                         )
                     )
                     OutlinedTextField(
                         value = startM,
                         onValueChange = { startM = it },
-                        label = { Text("دقیقه شروع", fontSize = 10.sp, color = Color(0xFF94A3B8)) },
+                        label = { Text("دقیقه شروع", fontSize = 10.sp, color = Color(0xFF64748B)) },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         modifier = Modifier.weight(1f),
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = Color(0xFF00B0FF),
-                            unfocusedBorderColor = Color.White.copy(alpha = 0.1f)
+                            unfocusedBorderColor = Color(0xFF1F2937).copy(alpha = 0.1f)
                         )
                     )
                 }
@@ -1472,7 +1474,7 @@ fun EditRecordDialog(
                 Text(
                     text = if (hasEndTime) "ساعت خروج:" else "ساعت خروج (در حال ثبت):",
                     fontSize = 12.sp,
-                    color = Color(0xFF94A3B8),
+                    color = Color(0xFF64748B),
                     textAlign = TextAlign.Right,
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -1484,28 +1486,28 @@ fun EditRecordDialog(
                     OutlinedTextField(
                         value = endH,
                         onValueChange = { endH = it },
-                        label = { Text("ساعت پایان", fontSize = 10.sp, color = Color(0xFF94A3B8)) },
+                        label = { Text("ساعت پایان", fontSize = 10.sp, color = Color(0xFF64748B)) },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         modifier = Modifier.weight(1f),
                         enabled = hasEndTime,
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = Color(0xFF00B0FF),
-                            unfocusedBorderColor = Color.White.copy(alpha = 0.1f),
-                            disabledBorderColor = Color.White.copy(alpha = 0.05f),
+                            unfocusedBorderColor = Color(0xFF1F2937).copy(alpha = 0.1f),
+                            disabledBorderColor = Color(0xFF1F2937).copy(alpha = 0.05f),
                             disabledTextColor = Color.Gray
                         )
                     )
                     OutlinedTextField(
                         value = endM,
                         onValueChange = { endM = it },
-                        label = { Text("دقیقه پایان", fontSize = 10.sp, color = Color(0xFF94A3B8)) },
+                        label = { Text("دقیقه پایان", fontSize = 10.sp, color = Color(0xFF64748B)) },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         modifier = Modifier.weight(1f),
                         enabled = hasEndTime,
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = Color(0xFF00B0FF),
-                            unfocusedBorderColor = Color.White.copy(alpha = 0.1f),
-                            disabledBorderColor = Color.White.copy(alpha = 0.05f),
+                            unfocusedBorderColor = Color(0xFF1F2937).copy(alpha = 0.1f),
+                            disabledBorderColor = Color(0xFF1F2937).copy(alpha = 0.05f),
                             disabledTextColor = Color.Gray
                         )
                     )
@@ -1548,12 +1550,12 @@ fun EditRecordDialog(
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00B0FF)),
                 shape = RoundedCornerShape(12.dp)
             ) {
-                Text("ذخیره تغییرات", color = Color.White, fontWeight = FontWeight.Bold)
+                Text("ذخیره تغییرات", color = Color(0xFF1F2937), fontWeight = FontWeight.Bold)
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("انصراف", color = Color(0xFF94A3B8), fontWeight = FontWeight.Medium)
+                Text("انصراف", color = Color(0xFF64748B), fontWeight = FontWeight.Medium)
             }
         }
     )
