@@ -1,22 +1,61 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://ai.google.dev/static/site-assets/images/share-ais-513315318.png" />
-</div>
+# ثبت کارکرد (Finto)
 
-# Run and deploy your AI Studio app
+برنامه اندروید برای ثبت ساعت کارکرد، ثبت مرخصی و تهیه گزارش‌های ماهانه بر پایه تقویم جلالی.
 
-This contains everything you need to run your app locally.
+## قابلیت‌ها
 
-View your app in AI Studio: https://ai.studio/apps/e34f6297-05ef-4239-b5db-ba8bc60e15b2
+- **ثبت زمان کار**: شروع و پایان شیفت، ثبت دستی کارکرد و ویرایش سوابق.
+- **گزارش برای هر سابقه**: برای هر سابقه کارکرد می‌توان گزارش **متنی** یا **صوتی** ثبت کرد.
+  - گزارش متنی: در دیتابیس ذخیره می‌شود و می‌توان آن را به صورت فایل `.txt` به گوگل داک و
+    به صورت متن به تلگرام فرستاد.
+  - گزارش صوتی: در دیتابیس ذخیره نمی‌شود؛ برای جلوگیری از شلوغ شدن دیتابیس، فقط پس از
+    ارسال موفق به **گوگل داک** و **تلگرام** از حافظه برنامه پاک می‌شود و تنها نشانی ارسال‌ها در
+    دیتابیس نگه داشته می‌شود.
+- **ثبت مرخصی یک روزه**: انواع مرخصی «مرخصی روزانه»، «مرخصی استعلاجی» و «توراهی» با باکس توضیحات.
+  روزهای مرخصی از ساعت موظفی همان ماه کم می‌شوند و در گزارش کارکرد و خروجی اکسل با نوع مرخصی و
+  توضیحات نمایش داده می‌شوند.
+- **گزارش‌گیری**: محاسبه ساعت موظفی، کارکرد واقعی و مابه‌التفاوت، به‌همراه خروجی CSV/Excel ماهانه
+  در پوشه Downloads.
 
-## Run Locally
+## نصب و به‌روزرسانی APK
 
-**Prerequisites:**  [Android Studio](https://developer.android.com/studio)
+فایل APK توسط GitHub Actions ساخته و در بخش artifacts با نام `myfinto-apk` (فایل `myfinto.apk`)
+قرار می‌گیرد. برای نصب:
 
+1. در صفحه Actions، آخرین اجرای موفق `Build and Release APK` را باز کنید.
+2. از بخش **Artifacts** فایل `myfinto-apk` را دانلود و از حالت zip خارج کنید.
+3. `myfinto.apk` را روی گوشی نصب کنید (اجازه نصب از منابع نامشخص لازم است).
 
-1. Open Android Studio
-2. Select **Open** and choose the directory containing this project
-3. Allow Android Studio to fix any incompatibilities as it imports the project.
-4. Create a file named `.env` in the project directory and set `GEMINI_API_KEY` in that file to your Gemini API key (see `.env.example` for an example)
-5. Remove this line from the app's `build.gradle.kts` file: `signingConfig = signingConfigs.getByName("debugConfig")`
-6. Run the app on an emulator or physical device
-7. If you have already published your app in AI Studio, please [request upload key reset](https://support.google.com/googleplay/android-developer/answer/9842756#zippy=%2Crequest-an-upload-key-reset) in Google Play Console.
+نسخه فعلی `versionCode = 2` و `versionName = 1.1` است؛ یعنی این فایل نسبت به نسخه قبلی
+(`versionCode = 1`) به عنوان **به‌روزرسانی** شناخته می‌شود و نیازی به حذف برنامه قبلی نیست.
+شرط مهم: APK قدیمی و جدید باید با یک کلید امضا شده باشند. در GitHub Actions کلید امضا از
+secret‌های `ANDROID_KEYSTORE_BASE64` و `ANDROID_KEYSTORE_PASSWORD` خوانده می‌شود؛ اگر این
+secret‌ها تنظیم نشده باشند، بیلد با کلید debug تصادفی امضا می‌شود و گوشی آن را به‌عنوان آپدیت
+قبول نمی‌کند. در لاگ بیلد، بخش `Show version and signing info` اثر انگشت گواهی امضا را چاپ می‌کند.
+
+## راه‌اندازی ارسال به گوگل داک و تلگرام
+
+برای فعال شدن ارسال گزارش‌ها، باید یک‌بار مقصدها را تنظیم کنید:
+
+1. **گوگل داک**: راهنمای ساخت سرویس گوگل در `tools/README.md` و کد آماده در
+   `tools/google-drive/Code.gs` قرار دارد.
+2. **تلگرام**: با ربات BotFather یک ربات بسازید و توکن و Chat ID را بردارید.
+
+سپس در برنامه روی آیکن چرخ‌دنده (بالا سمت چپ) بزنید و مقادیر را ذخیره کنید. دکمه «تست تلگرام»
+در همین صفحه، اتصال را بررسی می‌کند.
+
+## اجرای محلی
+
+**پیش‌نیاز:** [Android Studio](https://developer.android.com/studio)
+
+1. پروژه را در Android Studio باز کنید و اجازه دهید وابستگی‌ها sync شوند.
+2. روی دستگاه یا شبیه‌ساز Run بزنید، یا برای ساخت APK دستور زیر را اجرا کنید:
+
+   ```
+   ./gradlew assembleDebug
+   ```
+
+3. برای بیلد محلی با همان کلید امضای CI، متغیرهای محیطی `KEYSTORE_PATH`، `STORE_PASSWORD` و
+   `KEY_PASSWORD` را تنظیم کنید.
+
+پروژه در AI Studio: https://ai.studio/apps/e34f6297-05ef-4239-b5db-ba8bc60e15b2

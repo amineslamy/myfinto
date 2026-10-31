@@ -1,22 +1,30 @@
 package com.example
 
+import android.Manifest
+import android.content.pm.PackageManager
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.*
+import androidx.core.content.ContextCompat
 import com.example.ui.theme.Typography
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -40,6 +48,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -78,9 +91,13 @@ fun TimeTrackerApp(viewModel: TimeTrackingViewModel = viewModel()) {
     val currentMonthTarget by viewModel.currentMonthObligatoryHours.collectAsStateWithLifecycle()
 
     var activeTab by remember { mutableIntStateOf(0) }
+    var showCloudSettings by remember { mutableStateOf(false) }
 
     // Enforce Right-to-Left (RTL) Layout Direction strictly for Persian (Farsi) UI
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+        if (showCloudSettings) {
+            CloudSettingsDialog(onDismiss = { showCloudSettings = false })
+        }
         Scaffold(
             topBar = {
                 Box(
@@ -119,7 +136,8 @@ fun TimeTrackerApp(viewModel: TimeTrackingViewModel = viewModel()) {
                             modifier = Modifier
                                 .size(40.dp)
                                 .background(Color(0xFF1F2937), shape = RoundedCornerShape(50))
-                                .border(BorderStroke(1.dp, Color(0xFF1F2937).copy(alpha = 0.1f)), RoundedCornerShape(50)),
+                                .border(BorderStroke(1.dp, Color(0xFF1F2937).copy(alpha = 0.1f)), RoundedCornerShape(50))
+                                .clickable { showCloudSettings = true },
                             contentAlignment = Alignment.Center
                         ) {
                             Text("⚙️", fontSize = 16.sp)
@@ -158,6 +176,19 @@ fun TimeTrackerApp(viewModel: TimeTrackingViewModel = viewModel()) {
                     NavigationBarItem(
                         selected = activeTab == 1,
                         onClick = { activeTab = 1 },
+                        icon = { Text("🌴", fontSize = 20.sp) },
+                        label = { Text("مرخصی", fontSize = 12.sp, fontWeight = FontWeight.Bold) },
+                        colors = NavigationBarItemDefaults.colors(
+                            selectedIconColor = Color(0xFF00B0FF),
+                            selectedTextColor = Color(0xFF00B0FF),
+                            indicatorColor = Color(0xFF00B0FF).copy(alpha = 0.12f),
+                            unselectedIconColor = Color(0xFF64748B),
+                            unselectedTextColor = Color(0xFF64748B)
+                        )
+                    )
+                    NavigationBarItem(
+                        selected = activeTab == 2,
+                        onClick = { activeTab = 2 },
                         icon = { Text("📊", fontSize = 20.sp) },
                         label = { Text("گزارشات و خروجی", fontSize = 12.sp, fontWeight = FontWeight.Bold) },
                         colors = NavigationBarItemDefaults.colors(
@@ -177,10 +208,10 @@ fun TimeTrackerApp(viewModel: TimeTrackingViewModel = viewModel()) {
                     .padding(innerPadding)
                     .padding(horizontal = 16.dp)
             ) {
-                if (activeTab == 0) {
-                    TimeRegistrationTab(viewModel, activeRecord, allRecords, currentMonthTarget)
-                } else {
-                    ReportsTab(viewModel)
+                when (activeTab) {
+                    0 -> TimeRegistrationTab(viewModel, activeRecord, allRecords, currentMonthTarget)
+                    1 -> LeaveTab(viewModel)
+                    else -> ReportsTab(viewModel)
                 }
             }
         }
@@ -197,12 +228,22 @@ fun TimeRegistrationTab(
     val today = JalaliCalendarHelper.fromEpochMillis(System.currentTimeMillis())
     
     var editingRecord by remember { mutableStateOf<TimeRecord?>(null) }
+    var reportingRecord by remember { mutableStateOf<TimeRecord?>(null) }
+    val allReports by viewModel.allReports.collectAsStateWithLifecycle()
 
     if (editingRecord != null) {
         EditRecordDialog(
             record = editingRecord!!,
             onDismiss = { editingRecord = null },
             onSave = { updated -> viewModel.updateRecord(updated) }
+        )
+    }
+
+    if (reportingRecord != null) {
+        ReportDialog(
+            record = reportingRecord!!,
+            viewModel = viewModel,
+            onDismiss = { reportingRecord = null }
         )
     }
     val currentMonthRecords = allRecords.filter { it.jalaliYear == today.year && it.jalaliMonth == today.month }
@@ -520,8 +561,10 @@ fun TimeRegistrationTab(
             items(allRecords.take(50)) { record ->
                 RecordItem(
                     record = record,
+                    reportCount = allReports.count { it.recordId == record.id },
                     onEdit = { editingRecord = record },
-                    onDelete = { viewModel.deleteRecord(record) }
+                    onDelete = { viewModel.deleteRecord(record) },
+                    onOpenReports = { reportingRecord = record }
                 )
             }
         }
@@ -692,7 +735,13 @@ fun ManualRecordSection(viewModel: TimeTrackingViewModel) {
 }
 
 @Composable
-fun RecordItem(record: TimeRecord, onEdit: () -> Unit, onDelete: () -> Unit) {
+fun RecordItem(
+    record: TimeRecord,
+    reportCount: Int = 0,
+    onEdit: () -> Unit,
+    onDelete: () -> Unit,
+    onOpenReports: (() -> Unit)? = null
+) {
     val dayOfWeek = JalaliCalendarHelper.getDayOfWeekPersian(record.jalaliYear, record.jalaliMonth, record.jalaliDay)
     val startTime = SimpleDateFormat("HH:mm", Locale.US).format(Date(record.startTimeMillis))
     val endTime = if (record.endTimeMillis != null) {
@@ -743,6 +792,26 @@ fun RecordItem(record: TimeRecord, onEdit: () -> Unit, onDelete: () -> Unit) {
                     color = Color(0xFF00B0FF),
                     fontWeight = FontWeight.SemiBold
                 )
+                if (onOpenReports != null) {
+                    TextButton(
+                        onClick = onOpenReports,
+                        contentPadding = PaddingValues(horizontal = 0.dp, vertical = 0.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Add,
+                            contentDescription = null,
+                            tint = Color(0xFF00B0FF),
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = if (reportCount > 0) "گزارش‌ها ($reportCount)" else "افزودن گزارش",
+                            fontSize = 12.sp,
+                            color = Color(0xFF00B0FF),
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
+                }
             }
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -800,6 +869,7 @@ fun ReportsTab(viewModel: TimeTrackingViewModel) {
 
     val reportWorkedHours by viewModel.reportWorkedHours.collectAsStateWithLifecycle()
     val reportObligatoryHours by viewModel.reportObligatoryHours.collectAsStateWithLifecycle()
+    val reportLeaves by viewModel.reportLeaveDays.collectAsStateWithLifecycle()
 
     // Excel Export State
     var exportYear by remember { mutableStateOf(today.year.toString()) }
@@ -1083,6 +1153,25 @@ fun ReportsTab(viewModel: TimeTrackingViewModel) {
                             fontWeight = FontWeight.Bold,
                             color = deltaColor
                         )
+                    }
+
+                    if (reportLeaves.isNotEmpty()) {
+                        HorizontalDivider(color = Color(0xFF1F2937).copy(alpha = 0.08f))
+                        Text(
+                            text = "مرخصی‌های این بازه (${reportLeaves.size} روز):",
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF00B0FF)
+                        )
+                        reportLeaves.forEach { leave ->
+                            val noteText = if (leave.note.isNullOrBlank()) "" else " - ${leave.note}"
+                            Text(
+                                text = "• ${leave.jalaliYear}/${leave.jalaliMonth}/${leave.jalaliDay} - " +
+                                    leave.leaveType + noteText,
+                                fontSize = 12.sp,
+                                color = Color(0xFF64748B)
+                            )
+                        }
                     }
                 }
             }
@@ -1556,6 +1645,772 @@ fun EditRecordDialog(
         dismissButton = {
             TextButton(onClick = onDismiss) {
                 Text("انصراف", color = Color(0xFF64748B), fontWeight = FontWeight.Medium)
+            }
+        }
+    )
+}
+
+@Composable
+fun LeaveItem(leave: LeaveDay, onDelete: () -> Unit) {
+    val dayOfWeek = JalaliCalendarHelper.getDayOfWeekPersian(
+        leave.jalaliYear,
+        leave.jalaliMonth,
+        leave.jalaliDay
+    )
+
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .border(BorderStroke(1.dp, Color(0xFF1F2937).copy(alpha = 0.05f)), RoundedCornerShape(16.dp)),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(14.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(
+                    text = "$dayOfWeek ${leave.jalaliYear}/${leave.jalaliMonth}/${leave.jalaliDay}",
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF1F2937)
+                )
+                Text(
+                    text = leave.leaveType,
+                    fontSize = 13.sp,
+                    color = Color(0xFF00B0FF),
+                    fontWeight = FontWeight.SemiBold
+                )
+                if (!leave.note.isNullOrBlank()) {
+                    Text(
+                        text = "توضیحات: ${leave.note}",
+                        fontSize = 12.sp,
+                        color = Color(0xFF64748B)
+                    )
+                }
+            }
+            IconButton(onClick = onDelete) {
+                Icon(
+                    imageVector = Icons.Default.Delete,
+                    contentDescription = "حذف مرخصی",
+                    tint = MaterialTheme.colorScheme.error
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun LeaveTab(viewModel: TimeTrackingViewModel) {
+    val context = LocalContext.current
+    val today = JalaliCalendarHelper.fromEpochMillis(System.currentTimeMillis())
+    val allLeaves by viewModel.allLeaves.collectAsStateWithLifecycle()
+
+    var year by remember { mutableStateOf(today.year.toString()) }
+    var month by remember { mutableStateOf(today.month.toString()) }
+    var day by remember { mutableStateOf(today.day.toString()) }
+    var selectedType by remember { mutableStateOf(LeaveTypes.DAILY) }
+    var note by remember { mutableStateOf("") }
+
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+        contentPadding = PaddingValues(top = 12.dp, bottom = 24.dp)
+    ) {
+        item {
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .border(BorderStroke(1.dp, Color(0xFF1F2937).copy(alpha = 0.05f)), RoundedCornerShape(20.dp)),
+                shape = RoundedCornerShape(20.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White)
+            ) {
+                Column(
+                    modifier = Modifier.padding(18.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Text(
+                        text = "ثبت مرخصی یک روزه",
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF00B0FF)
+                    )
+                    Text(
+                        text = "روز مرخصی از ساعات موظفی همان ماه کم می‌شود و در گزارش کارکرد و خروجی اکسل با نوع مرخصی و توضیحات نمایش داده می‌شود.",
+                        fontSize = 12.sp,
+                        color = Color(0xFF64748B)
+                    )
+
+                    Text("نوع مرخصی:", fontSize = 12.sp, color = Color(0xFF64748B))
+                    LeaveTypes.ALL.forEach { type ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { selectedType = type },
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            RadioButton(
+                                selected = selectedType == type,
+                                onClick = { selectedType = type }
+                            )
+                            Text(type, fontSize = 13.sp, color = Color(0xFF1F2937))
+                        }
+                    }
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        OutlinedTextField(
+                            value = year,
+                            onValueChange = { year = it },
+                            label = { Text("سال", fontSize = 11.sp, color = Color(0xFF64748B)) },
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                            modifier = Modifier.weight(1.2f),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = Color(0xFF00B0FF),
+                                unfocusedBorderColor = Color(0xFF1F2937).copy(alpha = 0.1f)
+                            )
+                        )
+                        OutlinedTextField(
+                            value = month,
+                            onValueChange = { month = it },
+                            label = { Text("ماه", fontSize = 11.sp, color = Color(0xFF64748B)) },
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                            modifier = Modifier.weight(1f),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = Color(0xFF00B0FF),
+                                unfocusedBorderColor = Color(0xFF1F2937).copy(alpha = 0.1f)
+                            )
+                        )
+                        OutlinedTextField(
+                            value = day,
+                            onValueChange = { day = it },
+                            label = { Text("روز", fontSize = 11.sp, color = Color(0xFF64748B)) },
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                            modifier = Modifier.weight(1f),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = Color(0xFF00B0FF),
+                                unfocusedBorderColor = Color(0xFF1F2937).copy(alpha = 0.1f)
+                            )
+                        )
+                    }
+
+                    OutlinedTextField(
+                        value = note,
+                        onValueChange = { note = it },
+                        label = { Text("توضیحات مرخصی", fontSize = 11.sp, color = Color(0xFF64748B)) },
+                        modifier = Modifier.fillMaxWidth(),
+                        minLines = 2,
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = Color(0xFF00B0FF),
+                            unfocusedBorderColor = Color(0xFF1F2937).copy(alpha = 0.1f)
+                        )
+                    )
+
+                    Button(
+                        onClick = {
+                            val targetYear = year.toIntOrNull() ?: today.year
+                            val targetMonth = month.toIntOrNull() ?: today.month
+                            val targetDay = day.toIntOrNull() ?: today.day
+                            if (targetMonth < 1 || targetMonth > 12 ||
+                                targetDay < 1 || targetDay > JalaliCalendarHelper.getDaysInMonth(targetYear, targetMonth)
+                            ) {
+                                Toast.makeText(context, "تاریخ وارد شده نامعتبر است", Toast.LENGTH_LONG).show()
+                            } else {
+                                viewModel.saveLeave(targetYear, targetMonth, targetDay, selectedType, note)
+                                note = ""
+                                Toast.makeText(context, "مرخصی ثبت شد", Toast.LENGTH_SHORT).show()
+                            }
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(48.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00B0FF))
+                    ) {
+                        Text("ثبت مرخصی", fontWeight = FontWeight.Bold, color = Color(0xFF1F2937))
+                    }
+                }
+            }
+        }
+
+        item {
+            Text(
+                text = "مرخصی‌های ثبت شده (${allLeaves.size} روز)",
+                fontSize = 15.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color(0xFF1F2937),
+                modifier = Modifier.padding(top = 4.dp)
+            )
+        }
+
+        if (allLeaves.isEmpty()) {
+            item {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(24.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "هیچ مرخصی ثبت نشده است.",
+                        color = Color.Gray,
+                        fontSize = 14.sp,
+                        textAlign = TextAlign.Center
+                    )
+                }
+            }
+        } else {
+            items(allLeaves) { leave ->
+                LeaveItem(leave = leave, onDelete = { viewModel.deleteLeave(leave) })
+            }
+        }
+    }
+}
+
+@Composable
+fun CloudSettingsDialog(onDismiss: () -> Unit) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val savedSettings = remember { AppSettingsStore.load(context) }
+
+    var botToken by remember { mutableStateOf(savedSettings.telegramBotToken) }
+    var chatId by remember { mutableStateOf(savedSettings.telegramChatId) }
+    var driveUrl by remember { mutableStateOf(savedSettings.driveUploadUrl) }
+    var driveSecret by remember { mutableStateOf(savedSettings.driveSecret) }
+    var testing by remember { mutableStateOf(false) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = Color.White,
+        title = {
+            Text(
+                text = "تنظیمات ارسال گزارش‌ها",
+                fontSize = 15.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color(0xFF00B0FF),
+                textAlign = TextAlign.Right,
+                modifier = Modifier.fillMaxWidth()
+            )
+        },
+        text = {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                Text(
+                    text = "گزارش‌های متنی در دیتابیس ذخیره می‌شوند و نسخه txt آن‌ها به گوگل داک و متن آن به تلگرام ارسال می‌شود. گزارش‌های صوتی فقط به گوگل داک و تلگرام فرستاده می‌شوند.",
+                    fontSize = 11.sp,
+                    color = Color(0xFF64748B)
+                )
+
+                Text("تنظیمات تلگرام:", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color(0xFF1F2937))
+                OutlinedTextField(
+                    value = botToken,
+                    onValueChange = { botToken = it },
+                    label = { Text("توکن ربات (Bot Token)", fontSize = 11.sp, color = Color(0xFF64748B)) },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = Color(0xFF00B0FF),
+                        unfocusedBorderColor = Color(0xFF1F2937).copy(alpha = 0.1f)
+                    )
+                )
+                OutlinedTextField(
+                    value = chatId,
+                    onValueChange = { chatId = it },
+                    label = { Text("شناسه چت (Chat ID)", fontSize = 11.sp, color = Color(0xFF64748B)) },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = Color(0xFF00B0FF),
+                        unfocusedBorderColor = Color(0xFF1F2937).copy(alpha = 0.1f)
+                    )
+                )
+
+                Text("تنظیمات گوگل داک:", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color(0xFF1F2937))
+                OutlinedTextField(
+                    value = driveUrl,
+                    onValueChange = { driveUrl = it },
+                    label = { Text("آدرس وب‌اپ اسکریپت گوگل", fontSize = 11.sp, color = Color(0xFF64748B)) },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = Color(0xFF00B0FF),
+                        unfocusedBorderColor = Color(0xFF1F2937).copy(alpha = 0.1f)
+                    )
+                )
+                OutlinedTextField(
+                    value = driveSecret,
+                    onValueChange = { driveSecret = it },
+                    label = { Text("کلید امنیتی مشترک", fontSize = 11.sp, color = Color(0xFF64748B)) },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = Color(0xFF00B0FF),
+                        unfocusedBorderColor = Color(0xFF1F2937).copy(alpha = 0.1f)
+                    )
+                )
+
+                Text(
+                    text = "راهنمای ساخت ربات تلگرام و اسکریپت گوگل داک در پوشه tools پروژه قرار دارد.",
+                    fontSize = 10.sp,
+                    color = Color(0xFF64748B)
+                )
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    AppSettingsStore.save(context, CloudSettings(botToken, chatId, driveUrl, driveSecret))
+                    Toast.makeText(context, "تنظیمات ذخیره شد", Toast.LENGTH_SHORT).show()
+                    onDismiss()
+                },
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00B0FF)),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Text("ذخیره", color = Color(0xFF1F2937), fontWeight = FontWeight.Bold)
+            }
+        },
+        dismissButton = {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                TextButton(
+                    enabled = !testing,
+                    onClick = {
+                        AppSettingsStore.save(context, CloudSettings(botToken, chatId, driveUrl, driveSecret))
+                        testing = true
+                        scope.launch {
+                            val result = withContext(Dispatchers.IO) {
+                                runCatching {
+                                    ReportDelivery(context).sendTextToTelegram("پیام آزمایشی از برنامه ثبت کارکرد")
+                                }
+                            }
+                            testing = false
+                            Toast.makeText(
+                                context,
+                                result.fold(
+                                    { "اتصال تلگرام تایید شد" },
+                                    { "خطا: ${it.message}" }
+                                ),
+                                Toast.LENGTH_LONG
+                            ).show()
+                        }
+                    }
+                ) {
+                    Text(
+                        text = if (testing) "در حال بررسی..." else "تست تلگرام",
+                        fontSize = 12.sp,
+                        color = Color(0xFF64748B)
+                    )
+                }
+                TextButton(onClick = onDismiss) {
+                    Text("بستن", fontSize = 12.sp, color = Color(0xFF64748B))
+                }
+            }
+        }
+    )
+}
+
+@Composable
+fun ReportDialog(
+    record: TimeRecord,
+    viewModel: TimeTrackingViewModel,
+    onDismiss: () -> Unit
+) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val allReports by viewModel.allReports.collectAsStateWithLifecycle()
+    val recordReports = allReports.filter { it.recordId == record.id }
+
+    var reportMode by remember { mutableIntStateOf(0) }
+    var textInput by remember { mutableStateOf("") }
+    var busyMessage by remember { mutableStateOf<String?>(null) }
+
+    val voiceRecorder = remember { VoiceRecorder(context) }
+    var isRecording by remember { mutableStateOf(false) }
+    var recordedFile by remember { mutableStateOf<File?>(null) }
+    var elapsedMillis by remember { mutableStateOf(0L) }
+
+    val dayOfWeek = JalaliCalendarHelper.getDayOfWeekPersian(
+        record.jalaliYear,
+        record.jalaliMonth,
+        record.jalaliDay
+    )
+    val recordTitle = "$dayOfWeek ${record.jalaliYear}/${record.jalaliMonth}/${record.jalaliDay}"
+
+    LaunchedEffect(isRecording) {
+        while (isRecording) {
+            elapsedMillis = voiceRecorder.elapsedMillis
+            delay(500)
+        }
+    }
+
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        if (granted) {
+            val file = runCatching { voiceRecorder.start() }.getOrNull()
+            if (file != null) {
+                isRecording = true
+                elapsedMillis = 0L
+            } else {
+                Toast.makeText(context, "شروع ضبط صدا ناموفق بود", Toast.LENGTH_LONG).show()
+            }
+        } else {
+            Toast.makeText(context, "برای گزارش صوتی دسترسی میکروفون لازم است", Toast.LENGTH_LONG).show()
+        }
+    }
+
+    val closeDialog = {
+        if (isRecording) {
+            voiceRecorder.cancel()
+            isRecording = false
+        }
+        recordedFile?.delete()
+        recordedFile = null
+        onDismiss()
+    }
+
+    DisposableEffect(Unit) {
+        onDispose {
+            voiceRecorder.cancel()
+        }
+    }
+
+    val elapsedText = String.format(
+        Locale.US,
+        "%02d:%02d",
+        elapsedMillis / 60000,
+        (elapsedMillis / 1000) % 60
+    )
+
+    AlertDialog(
+        onDismissRequest = { closeDialog() },
+        containerColor = Color.White,
+        title = {
+            Text(
+                text = "گزارش‌های سابقه $recordTitle",
+                fontSize = 15.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color(0xFF00B0FF),
+                textAlign = TextAlign.Right,
+                modifier = Modifier.fillMaxWidth()
+            )
+        },
+        text = {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    FilterChip(
+                        selected = reportMode == 0,
+                        onClick = { reportMode = 0 },
+                        label = { Text("گزارش متنی", fontSize = 12.sp) }
+                    )
+                    FilterChip(
+                        selected = reportMode == 1,
+                        onClick = { reportMode = 1 },
+                        label = { Text("گزارش صوتی", fontSize = 12.sp) }
+                    )
+                }
+
+                if (reportMode == 0) {
+                    OutlinedTextField(
+                        value = textInput,
+                        onValueChange = { textInput = it },
+                        label = { Text("متن گزارش", fontSize = 11.sp, color = Color(0xFF64748B)) },
+                        modifier = Modifier.fillMaxWidth(),
+                        minLines = 3,
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = Color(0xFF00B0FF),
+                            unfocusedBorderColor = Color(0xFF1F2937).copy(alpha = 0.1f)
+                        )
+                    )
+                    Text(
+                        text = "گزارش متنی در دیتابیس ذخیره می‌شود، سپس می‌توانید نسخه txt آن را به گوگل داک و متن آن را به تلگرام بفرستید.",
+                        fontSize = 11.sp,
+                        color = Color(0xFF64748B)
+                    )
+                    Button(
+                        onClick = {
+                            if (textInput.isBlank()) {
+                                Toast.makeText(context, "متن گزارش خالی است", Toast.LENGTH_SHORT).show()
+                            } else {
+                                viewModel.addTextReport(record.id, textInput)
+                                textInput = ""
+                                Toast.makeText(context, "گزارش متنی ذخیره شد", Toast.LENGTH_SHORT).show()
+                            }
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(44.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00B0FF))
+                    ) {
+                        Text(
+                            text = "ذخیره گزارش متنی در دیتابیس",
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF1F2937)
+                        )
+                    }
+                } else {
+                    Text(
+                        text = "گزارش صوتی در دیتابیس ذخیره نمی‌شود؛ فایل صوتی پس از ارسال موفق به گوگل داک و تلگرام از حافظه برنامه پاک می‌گردد.",
+                        fontSize = 11.sp,
+                        color = Color(0xFF64748B)
+                    )
+
+                    if (isRecording) {
+                        Text(
+                            text = "در حال ضبط: $elapsedText",
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFFEF5350)
+                        )
+                        Button(
+                            onClick = {
+                                val file = voiceRecorder.stop()
+                                isRecording = false
+                                elapsedMillis = 0L
+                                if (file != null) {
+                                    recordedFile = file
+                                } else {
+                                    Toast.makeText(context, "ضبط صدا ناموفق بود", Toast.LENGTH_LONG).show()
+                                }
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(44.dp),
+                            shape = RoundedCornerShape(12.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFEF5350))
+                        ) {
+                            Text("توقف ضبط", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                        }
+                    } else {
+                        val file = recordedFile
+                        if (file == null) {
+                            Button(
+                                onClick = {
+                                    val granted = ContextCompat.checkSelfPermission(
+                                        context,
+                                        Manifest.permission.RECORD_AUDIO
+                                    ) == PackageManager.PERMISSION_GRANTED
+                                    if (granted) {
+                                        val startedFile = runCatching { voiceRecorder.start() }.getOrNull()
+                                        if (startedFile != null) {
+                                            isRecording = true
+                                            elapsedMillis = 0L
+                                        } else {
+                                            Toast.makeText(context, "شروع ضبط صدا ناموفق بود", Toast.LENGTH_LONG).show()
+                                        }
+                                    } else {
+                                        permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+                                    }
+                                },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(44.dp),
+                                shape = RoundedCornerShape(12.dp),
+                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1F2937))
+                            ) {
+                                Text(
+                                    text = "شروع ضبط گزارش صوتی",
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color.White
+                                )
+                            }
+                        } else {
+                            val fileSizeText = String.format(Locale.US, "%.1f", file.length() / 1024.0)
+                            Text(
+                                text = "فایل آماده ارسال: ${file.name} ($fileSizeText کیلوبایت)",
+                                fontSize = 12.sp,
+                                color = Color(0xFF1F2937)
+                            )
+                            Button(
+                                enabled = busyMessage == null,
+                                onClick = {
+                                    busyMessage = "در حال ارسال گزارش صوتی به گوگل داک و تلگرام..."
+                                    scope.launch {
+                                        val result = viewModel.archiveVoiceReport(record, file)
+                                        busyMessage = null
+                                        result.fold(
+                                            onSuccess = {
+                                                recordedFile = null
+                                                Toast.makeText(
+                                                    context,
+                                                    "گزارش صوتی به گوگل داک و تلگرام ارسال شد",
+                                                    Toast.LENGTH_LONG
+                                                ).show()
+                                            },
+                                            onFailure = { error ->
+                                                Toast.makeText(
+                                                    context,
+                                                    "خطا: ${error.message}",
+                                                    Toast.LENGTH_LONG
+                                                ).show()
+                                            }
+                                        )
+                                    }
+                                },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(44.dp),
+                                shape = RoundedCornerShape(12.dp),
+                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00B0FF))
+                            ) {
+                                Text(
+                                    text = "ارسال به گوگل داک و تلگرام",
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xFF1F2937)
+                                )
+                            }
+                            TextButton(onClick = {
+                                file.delete()
+                                recordedFile = null
+                            }) {
+                                Text("حذف و ضبط مجدد", fontSize = 12.sp, color = Color(0xFF64748B))
+                            }
+                        }
+                    }
+                }
+
+                busyMessage?.let { message ->
+                    Text(message, fontSize = 12.sp, color = Color(0xFF00B0FF))
+                }
+
+                HorizontalDivider(color = Color(0xFF1F2937).copy(alpha = 0.08f))
+
+                Text(
+                    text = "گزارش‌های این سابقه (${recordReports.size} مورد):",
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF1F2937)
+                )
+
+                if (recordReports.isEmpty()) {
+                    Text(
+                        text = "هنوز گزارشی برای این سابقه ثبت نشده است.",
+                        fontSize = 12.sp,
+                        color = Color(0xFF64748B)
+                    )
+                } else {
+                    recordReports.forEach { report ->
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .border(
+                                    BorderStroke(1.dp, Color(0xFF1F2937).copy(alpha = 0.08f)),
+                                    RoundedCornerShape(12.dp)
+                                )
+                                .padding(10.dp),
+                            verticalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            if (report.isAudio) {
+                                Text(
+                                    text = "گزارش صوتی",
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = Color(0xFF00B0FF)
+                                )
+                                Text(
+                                    text = report.audioFileName.orEmpty(),
+                                    fontSize = 11.sp,
+                                    color = Color(0xFF64748B)
+                                )
+                            } else {
+                                Text(
+                                    text = "گزارش متنی",
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = Color(0xFF00B0FF)
+                                )
+                                Text(
+                                    text = report.textContent.orEmpty(),
+                                    fontSize = 12.sp,
+                                    color = Color(0xFF1F2937),
+                                    maxLines = 4
+                                )
+                            }
+                            val driveStatus = if (report.driveUrl.isNullOrBlank()) "ارسال نشده" else "ارسال شده"
+                            val telegramStatus = if (report.telegramRef.isNullOrBlank()) "ارسال نشده" else "ارسال شده"
+                            Text(
+                                text = "گوگل داک: $driveStatus",
+                                fontSize = 11.sp,
+                                color = if (report.driveUrl.isNullOrBlank()) Color(0xFF64748B) else Color(0xFF388E3C)
+                            )
+                            Text(
+                                text = "تلگرام: $telegramStatus",
+                                fontSize = 11.sp,
+                                color = if (report.telegramRef.isNullOrBlank()) Color(0xFF64748B) else Color(0xFF388E3C)
+                            )
+                            if (!report.isAudio) {
+                                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                    TextButton(
+                                        enabled = busyMessage == null,
+                                        onClick = {
+                                            busyMessage = "در حال ارسال به گوگل داک..."
+                                            scope.launch {
+                                                val result = viewModel.sendTextReportToGoogleDrive(record, report)
+                                                busyMessage = null
+                                                Toast.makeText(
+                                                    context,
+                                                    result.fold(
+                                                        { "فایل txt به گوگل داک ارسال شد" },
+                                                        { "خطا: ${it.message}" }
+                                                    ),
+                                                    Toast.LENGTH_LONG
+                                                ).show()
+                                            }
+                                        }
+                                    ) {
+                                        Text("ارسال txt به گوگل داک", fontSize = 11.sp, color = Color(0xFF00B0FF))
+                                    }
+                                    TextButton(
+                                        enabled = busyMessage == null,
+                                        onClick = {
+                                            busyMessage = "در حال ارسال متن به تلگرام..."
+                                            scope.launch {
+                                                val result = viewModel.sendTextReportToTelegram(record, report)
+                                                busyMessage = null
+                                                Toast.makeText(
+                                                    context,
+                                                    result.fold(
+                                                        { "متن گزارش به تلگرام ارسال شد" },
+                                                        { "خطا: ${it.message}" }
+                                                    ),
+                                                    Toast.LENGTH_LONG
+                                                ).show()
+                                            }
+                                        }
+                                    ) {
+                                        Text("ارسال متن به تلگرام", fontSize = 11.sp, color = Color(0xFF00B0FF))
+                                    }
+                                }
+                            }
+                            TextButton(onClick = { viewModel.deleteReport(report) }) {
+                                Text("حذف گزارش", fontSize = 11.sp, color = MaterialTheme.colorScheme.error)
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = { closeDialog() },
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF00B0FF)),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Text("بستن", color = Color(0xFF1F2937), fontWeight = FontWeight.Bold)
             }
         }
     )
