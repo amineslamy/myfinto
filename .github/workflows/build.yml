@@ -40,7 +40,26 @@ jobs:
         fi
 
     - name: Build with Gradle
-      run: ./gradlew assembleDebug --no-daemon
+      run: |
+        set +e
+        ./gradlew assembleDebug --no-daemon 2>&1 | tee gradle-build.log
+        build_status=${PIPESTATUS[0]}
+        if [ "$build_status" -ne 0 ]; then
+          ERROR_LINES=$(grep -E "^e: |error: |FAILURE: Build failed" gradle-build.log | head -n 10 | sed 's/%/%25/g' | tr '\n' '|')
+          FAILURE_BLOCK=$(grep -A 12 "What went wrong" gradle-build.log | head -n 16 | sed 's/%/%25/g' | tr '\n' '|')
+          if [ -n "$ERROR_LINES" ]; then
+            echo "::error title=Build error lines::${ERROR_LINES//|/%0A}"
+          else
+            echo "::error title=Build error lines::No Kotlin error lines were captured"
+          fi
+          if [ -n "$FAILURE_BLOCK" ]; then
+            echo "::error title=Gradle failure summary::${FAILURE_BLOCK//|/%0A}"
+          else
+            echo "::error title=Gradle failure summary::No failure summary was captured"
+          fi
+          tail -n 60 gradle-build.log
+        fi
+        exit "$build_status"
       env:
         KEYSTORE_PATH: ${{ github.workspace }}/my-upload-key.jks
         STORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}

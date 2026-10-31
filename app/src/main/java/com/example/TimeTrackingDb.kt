@@ -49,10 +49,10 @@ data class WorkReport(
     val driveUrl: String? = null,
     val telegramRef: String? = null,
     val createdAt: Long = System.currentTimeMillis()
-) {
-    val isAudio: Boolean
-        get() = reportType == REPORT_TYPE_AUDIO
-}
+)
+
+val WorkReport.isAudio: Boolean
+    get() = reportType == REPORT_TYPE_AUDIO
 
 @Entity(
     tableName = "leave_days",
